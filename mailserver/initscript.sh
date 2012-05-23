@@ -11,11 +11,12 @@
 test $DEBIAN_SCRIPT_DEBUG && set -v -x
 
 ROOT_FOLDER=`python <<EOF
+import os
 import mailserver
 print os.path.dirname(mailserver.__file__)
 EOF`
 
-NAME = django-mailserver
+NAME=django-mailserver
 PIDFILE=/var/run/$NAME.pid
 DESC="email server for django webapps service"
 
@@ -60,6 +61,7 @@ status)
     log_failure_msg "$NAME running (PID = `cat $PIDFILE`)"
   else
     log_failure_msg "$NAME stopped"
+  fi
   ;;
 *)
   echo "Usage: $0 {start|stop|reload|restart|status}" >&2

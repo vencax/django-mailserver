@@ -11,7 +11,7 @@ RSYNC_EXCLUDE = (
     'testsettings',
     'fabfile.py',
 )
-env.git_repo = ''
+env.git_repo = 'git://github.com/vencax/django-mailserver.git'
 env.project = 'django-mailserver'
 env.root = os.path.join('/etc', env.project)
 env.configdir = os.path.join(env.root, 'config.d')
@@ -34,10 +34,16 @@ def bootstrap():
     copy_initscript()
     
 def copy_initscript():
-    run('''cp `python << EOF
-    include mailserver
-    print os.path.dirname(mailserver.__file__)
-    EOF`/initscript.sh /etc/init.d/%s''' % env.project)
+    path_to_package = run('''python << EOF
+import os
+import mailserver
+print os.path.dirname(mailserver.__file__)
+EOF''')
+     
+    run('sudo cp %s/initscript.sh /etc/init.d/%s' % (path_to_package, 
+                                                     env.project)) 
+    run('sudo cp %s/django-mailserver.cfg /etc/' % path_to_package)
+    run('sudo chmod 755 /etc/init.d/%s' % env.project)
 
 def enable_init_script():
     """ Enable autostarting of init script """
