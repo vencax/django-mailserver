@@ -21,5 +21,6 @@ common setup
 ------------
 I have default installation of postfix (aptitude install postfix -y) for mail sending 
 with little change in config that force it to listen only at localhost.
-django-mailserver listens on external interface to be able to receive mail from internet.
+django-mailserver listens on external interface to be able to receive mail from internet
+(sed 's/inet_interfaces = all/inet_interfaces = localhost/g' -i /etc/postfix/main.cf).
 It listens on port 8025 to prevent root permissions and port 25 is actually forwarded to the 8025.
