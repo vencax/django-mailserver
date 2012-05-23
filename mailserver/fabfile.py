@@ -32,6 +32,7 @@ def bootstrap():
     """ initialize remote host environment (virtualenv, deploy, update) """
     run('sudo pip install git+%s' % env.git_repo)
     copy_initscript()
+    enable_init_script()
     
 def copy_initscript():
     path_to_package = run('''python << EOF
@@ -47,7 +48,7 @@ EOF''')
 
 def enable_init_script():
     """ Enable autostarting of init script """
-    run('sudo update-rc defaults django-mailserver')
+    run('sudo update-rc.d django-mailserver defaults')
     
 def redirect_port():
     """
