@@ -1,3 +1,5 @@
 include README
-initscript.sh
+include django-mailserver.cfg
+include mailserver/initscript.sh
+include mailserver/fw_redirect.sh
 recursive-include test_project_root *
