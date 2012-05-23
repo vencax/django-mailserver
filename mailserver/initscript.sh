@@ -26,7 +26,7 @@ start () {
     if test -e $PIDFILE ; then
       log_failure_msg "Already running (PID file exists)"
     else
-      python $ROOT_FOLDER/server.py
+      python $ROOT_FOLDER/server.py &
       echo $! > $PIDFILE
     fi
     log_end_msg $STATUS
