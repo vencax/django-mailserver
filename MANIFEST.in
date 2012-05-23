@@ -1,0 +1,3 @@
+include README
+initscript.sh
+recursive-include test_project_root *

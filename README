@@ -1,0 +1,25 @@
+django-mailserver
+-----------------
+
+Implements mail server for multiple domains that are served by django.
+It allows interaction of mail base services (like payment notification from bank) with the django webs.
+It also allows to define forwarding address for any other mail so it is not necessary to setup other mail 
+service for whole domain if we want just have to redired mail to another address.
+
+django-mailserver is based on python asyncore library thus is fully asynchronous.
+
+settings
+--------
+django-mailserver knows where your django based application resides 
+so it regularly tries to load mailserver_settings in particular webapp root
+(the folder where is the manage.py script).
+For syntax of the mailserver_settings module see examples in test_project_root.
+Path definitions django-mailserver reads from config file which /etc/django-mailserver.cfg
+by default or the file is overridden by DJANGO_MAILSERVER_CONF_FILE environment variable.
+
+common setup
+------------
+I have default installation of postfix (aptitude install postfix -y) for mail sending 
+with little change in config that force it to listen only at localhost.
+django-mailserver listens on external interface to be able to receive mail from internet.
+It listens on port 8025 to prevent root permissions and port 25 is actually forwarded to the 8025.
