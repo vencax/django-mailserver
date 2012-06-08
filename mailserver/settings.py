@@ -37,12 +37,17 @@ class Settings(object):
     def load(self):
         settings = {}
         for project in os.listdir(self._projects_root):
+            if not os.path.isdir(os.path.join(self._projects_root, project))\
+                or project.startswith('.'):
+                continue
+
             project_root = os.path.join(self._projects_root,
                                     project, self._path_to_project_root)
             
             proj_sett = self._load_project_settings(project, project_root)
-            self._add_project_settings(proj_sett, settings, 
-                                       project, project_root)
+            if proj_sett:
+                self._add_project_settings(proj_sett, settings, 
+                                           project, project_root)
         self._settingslock.acquire()
         self.info = settings
         self._settingslock.release()
@@ -60,8 +65,6 @@ class Settings(object):
         
     def _add_project_settings(self, proj_settings, settingsmap, 
                               project, project_root):
-        if not proj_settings:
-            return
         for domainInfo in proj_settings:
             try:
                 domain, mapping, forwardaddr = domainInfo
@@ -85,10 +88,11 @@ class Settings(object):
         try:
             settings_mod = __import__('%s.mailserver_settings' % project,
                               globals(), locals(), ['settings'])
+            logging.info('Loaded settings within project %s' % project)
             if isinstance(settings_mod.settings, list):
                 return settings_mod.settings
-        except ImportError, e:
-            logging.exception(e)
+        except ImportError:
+            pass
         finally:
             sys.path.remove(project_root)
 

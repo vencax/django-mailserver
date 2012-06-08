@@ -75,9 +75,11 @@ class MailServer(smtpd.SMTPServer):
         """
         Process message as django app in given path.
         """
+        called = [python_binary, script, commandToRun, 
+                  recipient, mailfrom, data]
+        logging.info(' '.join(called))
         try:
-            subprocess.call([python_binary, script, commandToRun, 
-                             recipient, mailfrom, data])
+            subprocess.call(called)
         except Exception, e:
             self.logger.exception(e)
 
