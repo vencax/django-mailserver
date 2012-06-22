@@ -43,11 +43,13 @@ class Settings(object):
 
             project_root = os.path.join(self._projects_root,
                                     project, self._path_to_project_root)
+            logging.debug('Looking for settings in %s' % project_root)
             
             proj_sett = self._load_project_settings(project, project_root)
             if proj_sett:
                 self._add_project_settings(proj_sett, settings, 
                                            project, project_root)
+                logging.debug('Found setting!')
         self._settingslock.acquire()
         self.info = settings
         self._settingslock.release()
@@ -86,7 +88,7 @@ class Settings(object):
     def _load_project_settings(self, project, project_root):        
         sys.path.insert(0, project_root)
         try:
-            settings_mod = __import__('%s.mailserver_settings' % project,
+            settings_mod = __import__('mailserver_settings',
                               globals(), locals(), ['settings'])
             logging.info('Loaded settings within project %s' % project)
             if isinstance(settings_mod.settings, list):
