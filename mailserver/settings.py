@@ -88,13 +88,14 @@ class Settings(object):
     def _load_project_settings(self, project, project_root):        
         sys.path.insert(0, project_root)
         try:
-            settings_mod = __import__('mailserver_settings',
-                              globals(), locals(), ['settings'])
-            logging.info('Loaded settings within project %s' % project)
-            if isinstance(settings_mod.settings, list):
+            settings_mod = __import__('mailserver_settings', ['settings'])
+            if os.path.dirname(settings_mod.__file__) == project_root and\
+                isinstance(settings_mod.settings, list):
+                logging.info('Loaded settings within project %s' % project)
                 return settings_mod.settings
+            return None
         except ImportError:
-            pass
+            return None
         finally:
             sys.path.remove(project_root)
 

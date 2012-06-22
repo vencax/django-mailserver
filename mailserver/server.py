@@ -44,9 +44,11 @@ class MailServer(smtpd.SMTPServer):
                 mapping, forwardaddr, python_binary, script = self._settings.info[domain]
                 commandToRun = self._getCommandToRun(user, mapping)
                 if commandToRun:
+                    self.logger.debug('Running command %s' % commandToRun)
                     self._processAsDjango(python_binary, script, commandToRun, 
                                           recipient, mailfrom, data)
                 else:
+                    self.logger.debug('Forwarding to %s' % forwardaddr)
                     self._forward(forwardaddr, mailfrom, rcpttos, data)
             self._settingslock.release()
 
