@@ -79,10 +79,11 @@ class MailServer(smtpd.SMTPServer):
         Process message as django app in given path.
         """
         called = [python_binary, script, commandToRun, 
-                  recipient, mailfrom, data]
+                  recipient, mailfrom, data.replace('\n', ' ')]
         logging.info(' '.join(called))
         try:
-            subprocess.call(called)
+            retval = subprocess.call(called)
+            logging.debug('Retcode: %i' % retval)
         except Exception, e:
             self.logger.exception(e)
 

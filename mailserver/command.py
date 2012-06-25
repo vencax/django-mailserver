@@ -15,7 +15,7 @@ class EmailHandlingCommand(BaseCommand):
         
         recipient = args[0]
         mailfrom = args[1]
-        data = ' '.join([unicode(a) for a in args[2:]])
+        data = ' '.join([self.unicodefix(a) for a in args[2:]])
         
         try:
             self.processMail(recipient, mailfrom, data)
@@ -24,3 +24,11 @@ class EmailHandlingCommand(BaseCommand):
             
     def processMail(self, recipient, mailfrom, data):
         raise NotImplementedError('You must implement processMail method')
+    
+    def unicodefix(self, val):
+        try:
+            return val.decode('utf-8')
+        except UnicodeDecodeError:
+            return val
+        except UnicodeEncodeError:
+            return val
