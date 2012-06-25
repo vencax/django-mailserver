@@ -22,7 +22,7 @@ class MailServer(smtpd.SMTPServer):
 
     def __init__(self, **kwargs):
         projects_root, path_to_project_root, path_to_python,\
-            poll_interval, addr, port = self._load_config()
+            path_to_manage, poll_interval, addr, port = self._load_config()
             
         smtpd.SMTPServer.__init__(self, (addr, port), None)
         
@@ -30,6 +30,7 @@ class MailServer(smtpd.SMTPServer):
         self._settings = Settings(projects_root,
                                   path_to_project_root,
                                   path_to_python,
+                                  path_to_manage,
                                   poll_interval,
                                   self._settingslock)
         self._settings.load()
@@ -97,6 +98,7 @@ class MailServer(smtpd.SMTPServer):
                 raise Exception('projects_root folder %s not exists.' % projects_root)
             path_to_project_root = f.readline().strip('\n')
             path_to_python = f.readline().strip('\n')
+            path_to_manage = f.readline().strip('\n')
             poll_interval = int(f.readline().strip('\n'))
             address = f.readline().strip('\n')
             port = int(f.readline().strip('\n'))
@@ -104,7 +106,7 @@ class MailServer(smtpd.SMTPServer):
             level = logging._levelNames.get(f.readline().strip('\n'), 'WARN')            
             logging.basicConfig(filename=logfile, level=level)
             return projects_root, path_to_project_root, path_to_python, \
-                poll_interval, address, port
+                path_to_manage, poll_interval, address, port
 
 if __name__ == "__main__":    
     server = MailServer()

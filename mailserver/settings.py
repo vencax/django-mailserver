@@ -16,7 +16,7 @@ class Settings(object):
     """
 
     def __init__(self, projects_root, path_to_project_root, path_to_python,
-                 poll_interval, lock):
+                 path_to_manage, poll_interval, lock):
         """
         @param projects_root: path where all django web projects are located.
         @param path_to_project_root: path to specific project within
@@ -31,6 +31,7 @@ class Settings(object):
                                  self._projects_root)
         self._path_to_project_root = path_to_project_root
         self._path_to_python = path_to_python
+        self._path_to_manage = path_to_manage
         self._setting_poll_interval = poll_interval
         self._settingslock = lock
 
@@ -47,8 +48,10 @@ class Settings(object):
             
             proj_sett = self._load_project_settings(project, project_root)
             if proj_sett:
+                path_to_manage = os.path.join(self._projects_root,
+                                    project, self._path_to_manage)
                 self._add_project_settings(proj_sett, settings, 
-                                           project, project_root)
+                                           project, path_to_manage)
                 logging.debug('Found setting!')
         self._settingslock.acquire()
         self.info = settings
@@ -66,7 +69,7 @@ class Settings(object):
     # -------------------------- privates -------------------------------------
         
     def _add_project_settings(self, proj_settings, settingsmap, 
-                              project, project_root):
+                              project, path_to_manage):
         for domainInfo in proj_settings:
             try:
                 domain, mapping, forwardaddr = domainInfo
@@ -79,16 +82,17 @@ class Settings(object):
                     python_binary_path = os.path.join(self._projects_root,
                                 project, self._path_to_python)
                     
-                script = os.path.join(project_root, 'manage.py')
+                script = os.path.join(path_to_manage, 'manage.py')
                 settingsmap[domain] = (mappinginfo, forwardaddr, 
                                        python_binary_path, script)
             except Exception:
                 pass
 
-    def _load_project_settings(self, project, project_root):        
+    def _load_project_settings(self, project, project_root):
         sys.path.insert(0, project_root)
         try:
             settings_mod = __import__('mailserver_settings', ['settings'])
+            reload(settings_mod)
             if os.path.dirname(settings_mod.__file__) == project_root and\
                 isinstance(settings_mod.settings, list):
                 logging.info('Loaded settings within project %s' % project)
