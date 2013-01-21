@@ -51,6 +51,7 @@ stop)
 # Only 'reload'
 reload|force-reload)
   log_action_begin_msg "Reloading $NAME"
+  kill -s USR1 `cat $PIDFILE`
   ;;
 restart)
   stop

@@ -5,88 +5,93 @@ Created on May 22, 2012
 '''
 import os
 import logging
-import time
-import threading
 import re
 import sys
 
+
 class Settings(object):
     """
-    Loads and polls setting folder.
+    Loads all setting folder.
     """
 
-    def __init__(self, projects_root, path_to_project_root, path_to_python,
-                 path_to_manage, poll_interval, lock):
-        """
-        @param projects_root: path where all django web projects are located.
-        @param path_to_project_root: path to specific project within
-        projects_root/<specific proj>/ subdirectory.
-        @param path_to_python: path to python binary which shall be  used to
-        run email processing script. The absolute path means run global python binary.
-        The relative is path within project subtree - virtualenv binary.
-        """
-        self._projects_root = projects_root
-        if not os.path.exists(self._projects_root):
-            raise AttributeError('project_root %s not exists' %\
-                                 self._projects_root)
-        self._path_to_project_root = path_to_project_root
-        self._path_to_python = path_to_python
-        self._path_to_manage = path_to_manage
-        self._setting_poll_interval = poll_interval
-        self._settingslock = lock
+    def load_config(self):
+        if 'DJANGO_MAILSERVER_CONF_FILE' in os.environ:
+            configfile = os.environ['DJANGO_MAILSERVER_CONF_FILE']
+        else:
+            configfile = '/etc/django_mailserver_cfg.py'
 
-    def load(self):
-        settings = {}
-        for project in os.listdir(self._projects_root):
-            if not os.path.isdir(os.path.join(self._projects_root, project))\
-                or project.startswith('.'):
+        cfgPath = os.path.dirname(configfile)
+        cfgModName = os.path.basename(configfile).rstrip('.py')
+        sys.path.insert(0, cfgPath)
+
+        cfgMod = __import__(cfgModName)
+
+        projects_root = getattr(cfgMod, 'PROJECTS_ROOT', '/home')
+        if not os.path.exists(projects_root):
+            raise Exception('PROJECTS_ROOT %s not exists.' % projects_root)
+
+        path_to_project_root = getattr(cfgMod, 'PATH_TO_PROJECT_ROOT',
+                                       'mysite')
+        path_to_python = getattr(cfgMod, 'PATH_TO_PYTHON', 'virtenv/bin')
+        path_to_manage = getattr(cfgMod, 'PATH_TO_MANAGE', 'mysite')
+        address = getattr(cfgMod, 'ADDRESS', 'localhost')
+        port = getattr(cfgMod, 'PORT', 8025)
+        logfile = getattr(cfgMod, 'LOGFILE', None)
+        logFolder = getattr(cfgMod, 'LOG_FOLDER', None)
+        level = logging._levelNames[getattr(cfgMod, 'LOGLEVEL', 'WARN')]
+        logging.basicConfig(filename=logfile, level=level)
+
+        self._load_configs(projects_root, path_to_project_root,
+                           path_to_python, path_to_manage)
+
+        self.projects_root = projects_root
+        self.path_to_project_root = path_to_project_root
+        self.path_to_python = path_to_python
+        self.path_to_manage = path_to_manage
+        return address, port, logFolder
+
+    def reload_config(self):
+        self._load_configs(self.projects_root, self.path_to_project_root,
+                           self.path_to_python, self.path_to_manage)
+
+    # -------------------------- privates -------------------------------------
+
+    def _load_configs(self, projects_root, path_to_project_root,
+                      path_to_python, path_to_manage):
+        self.settings = {}
+        for project in os.listdir(projects_root):
+            projPath = os.path.join(projects_root, project)
+            if not os.path.isdir(projPath) or project.startswith('.'):
                 continue
 
-            project_root = os.path.join(self._projects_root,
-                                    project, self._path_to_project_root)
-            logging.debug('Looking for settings in %s' % project_root)
-            
+            project_root = os.path.join(projPath, path_to_project_root)
             proj_sett = self._load_project_settings(project, project_root)
             if proj_sett:
-                path_to_manage = os.path.join(self._projects_root,
-                                    project, self._path_to_manage)
-                self._add_project_settings(proj_sett, settings, 
-                                           project, path_to_manage)
-                logging.debug('Found setting!')
-        self._settingslock.acquire()
-        self.info = settings
-        self._settingslock.release()
-        logging.info('Settings loaded ...')
+                logging.debug('Found settings in %s' % project_root)
+                proj_path_to_manage = \
+                    os.path.join(projects_root, project, path_to_manage)
+                self._add_project_settings(proj_sett, project, path_to_python,
+                                           proj_path_to_manage, projects_root)
+        logging.debug('Settings loaded')
 
-    def run(self):
-        self._running = True
-        threading.Thread(target=self._settings_poll_thread_func,
-                         name='settings_thread').start()
-                         
-    def stop(self):
-        self._running = False
-    
-    # -------------------------- privates -------------------------------------
-        
-    def _add_project_settings(self, proj_settings, settingsmap, 
-                              project, path_to_manage):
+    def _add_project_settings(self, proj_settings, project, path_to_python,
+                              path_to_manage, projects_root):
         for domainInfo in proj_settings:
-            try:
-                domain, mapping, forwardaddr = domainInfo
-                mappinginfo = []
-                for regex, command in mapping.items():
-                    mappinginfo.append((re.compile(regex), command))
-                
-                python_binary_path = self._path_to_python
-                if not self._path_to_python.startswith('/'):    
-                    python_binary_path = os.path.join(self._projects_root,
-                                project, self._path_to_python)
-                    
-                script = os.path.join(path_to_manage, 'manage.py')
-                settingsmap[domain] = (mappinginfo, forwardaddr, 
-                                       python_binary_path, script)
-            except Exception:
-                pass
+            domain, mapping, forwardaddr = domainInfo
+            mappinginfo = []
+            for regex, command in mapping.items():
+                mappinginfo.append((re.compile(regex), command))
+
+            python_binary_path = path_to_python
+            if not path_to_python.startswith('/'):
+                python_binary_path = os.path.join(projects_root,
+                            project, path_to_python)
+
+            script = os.path.join(path_to_manage, 'manage.py')
+            self.settings[domain] = (
+                mappinginfo, forwardaddr,
+                python_binary_path, script
+            )
 
     def _load_project_settings(self, project, project_root):
         sys.path.insert(0, project_root)
@@ -102,8 +107,3 @@ class Settings(object):
             return None
         finally:
             sys.path.remove(project_root)
-
-    def _settings_poll_thread_func(self):
-        while(self._running):
-            time.sleep(self._setting_poll_interval)
-            self.load()
