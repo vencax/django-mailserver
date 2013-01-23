@@ -12,6 +12,9 @@ setup(
     author='Vaclav Klecanda',
     author_email='vencax77@gmail.com',
     url='https://github.com/vencax/django-mailserver',
+    data_files=[
+        ('/etc/init.d/', ['django-mailserver']),
+    ],
     packages=find_packages(),
     include_package_data=True,
 )
