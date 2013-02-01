@@ -5,10 +5,9 @@ Created on May 9, 2012
 '''
 import smtplib
 import unittest
-import os
 import threading
-import shutil
 import time
+from projectgroup_settings_iterator.tests import DjangoProjectRootTestCase
 from mailserver.server import MailServer
 
 
@@ -25,13 +24,10 @@ class TestingMailServer(MailServer):
         self.forward.append((forwardaddr, mailfrom, rcpttos, data))
 
 
-class TestSetting(unittest.TestCase):
+class TestSetting(DjangoProjectRootTestCase):
 
     testDomains = ('example1.com', 'example2.com', 'sample2.net')
-
-    def setUp(self):
-        unittest.TestCase.setUp(self)
-        self._prepareEnv()
+    settings_module_name = 'mailserver_settings'
 
     def test_all(self):
         self.server = TestingMailServer()
@@ -80,56 +76,11 @@ class TestSetting(unittest.TestCase):
         assert self.server.runqueue == desiredCalled, \
         'expected:\n%s\nactual:\n%s' % (desiredCalled, self.server.runqueue)
 
-    def tearDown(self):
-        self.server.stop()
-        shutil.rmtree(self._test_root)
-        unittest.TestCase.tearDown(self)
-
-    def _prepareEnv(self):
-        _proj_root = os.path.dirname(os.path.dirname(__file__))
-        _test_root = os.path.join(_proj_root, '_testTMP')
-        self._test_root = _test_root
-        if os.path.exists(_test_root):
-            shutil.rmtree(_test_root)
-        os.mkdir(_test_root)
-
-        testConfigFile = os.path.join(_test_root, '_example_cfg.py')
-        os.environ['DJANGO_MAILSERVER_CONF_FILE'] = testConfigFile
-
-        self.port = 8025
+    def prepareConfigExtras(self, cfgfilestram):
         self.host = 'localhost'
-        projects_root = os.path.join(_test_root, 'test_project_root')
-        os.mkdir(projects_root)
-
-        path_to_project_root = 'mysite'
-        path_to_python = 'virtenv/bin/python'
-        with open(testConfigFile, 'w') as f:
-            f.write('PROJECTS_ROOT=\'%s\'\n' % projects_root)
-            f.write('PATH_TO_PROJECT_ROOT=\'%s\'\n' % path_to_project_root)
-            f.write('PATH_TO_PYTHON=\'%s\'\n' % path_to_python)
-            f.write('PATH_TO_MANAGE=\'\'\n')
-            f.write('PORT=%s\n' % self.port)
-            f.write('LOGLEVEL=\'DEBUG\'\n')
-
-        for p in self.testDomains:
-            self._create_domain_fldr(p, projects_root, path_to_project_root)
-
-    def _create_domain_fldr(self, domain, projects_root, path_to_project_root):
-        domFolder = os.path.join(projects_root, domain)
-        os.mkdir(domFolder)
-        projRoot = os.path.join(domFolder, path_to_project_root)
-        os.mkdir(projRoot)
-        f = open(os.path.join(projRoot, '__init__.py'), 'w')
-        f.close()
-        with open(os.path.join(projRoot, 'mailserver_settings.py'), 'w') as f:
-            cntnt = '''
-settings = [
-    ('%s', {
-        'accountcallback': 'onAccountCallback',
-        'whateverElse': 'onWhaeverElse'
-    }, 'domainwide_forward@address.com')
-]'''
-            f.write(cntnt % domain)
+        self.port = 8025
+        cfgfilestram.write('PORT=%s\n' % self.port)
+        cfgfilestram.write('LOGLEVEL=\'DEBUG\'\n')
 
     def _runServer(self):
         threading.Thread(target=lambda: self.server.run()).start()

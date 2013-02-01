@@ -7,7 +7,7 @@ desc = '''Mailserver that allow whole environment of django\
 
 setup(
     name='django-mailserver',
-    version='0.2',
+    version='0.3',
     description=desc,
     author='Vaclav Klecanda',
     author_email='vencax77@gmail.com',
@@ -16,5 +16,8 @@ setup(
         ('/etc/init.d/', ['django-mailserver']),
     ],
     packages=find_packages(),
+    install_requires=[
+        'git+git://github.com/vencax/django-projectgroup-settings-iterator.git'
+    ],
     include_package_data=True,
 )

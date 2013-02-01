@@ -10,21 +10,20 @@ import logging
 import subprocess
 import smtplib
 import datetime
-from settings import Settings
+from mailserver.settings import MailserverSettings
 
 
-class MailServer(Settings, smtpd.SMTPServer):
+class MailServer(MailserverSettings, smtpd.SMTPServer):
     """
     Class based on smtpd server that actually process incoming mails.
     """
-    logger = logging.getLogger()
 
     def __init__(self, **kwargs):
-        addr, port, self.logFolder = self.load_config()
-        smtpd.SMTPServer.__init__(self, (addr, port), None)
+        self.load_config()
+        smtpd.SMTPServer.__init__(self, (self.address, self.port), None)
 
     def process_message(self, peer, mailfrom, rcpttos, data):
-        self.logger.info('INCOMING: %s, %s, %s' % (peer, mailfrom, rcpttos))
+        logging.info('INCOMING: %s, %s, %s' % (peer, mailfrom, rcpttos))
 
         try:
             for recipient in rcpttos:
@@ -43,7 +42,7 @@ class MailServer(Settings, smtpd.SMTPServer):
                         return '250 Ok'
             return '500 Error'  # for not owned mails
         except Exception, e:
-            self.logger.error(e)
+            logging.error(e)
 
     def runCommand(self, commandToRun, python_binary, script,
                    recipient, mailfrom, data):
@@ -60,16 +59,16 @@ class MailServer(Settings, smtpd.SMTPServer):
             retval = subprocess.call(called)
             logging.debug('Retcode: %i' % retval)
         except Exception, e:
-            self.logger.exception(e)
+            logging.exception(e)
 
     def forwardmail(self, forwardaddr, mailfrom, rcpttos, data):
-        self.logger.debug('Forwarding to %s' % forwardaddr)
+        logging.debug('Forwarding to %s' % forwardaddr)
         try:
             server = smtplib.SMTP('localhost', 25)
             server.sendmail(mailfrom, [forwardaddr], data)
             server.quit()
         except Exception, e:
-            self.logger.exception(e)
+            logging.exception(e)
 
     def run(self):
         asyncore.loop()

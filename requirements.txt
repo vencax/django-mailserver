@@ -1,0 +1,1 @@
+git+git://github.com/vencax/django-projectgroup-settings-iterator.git
