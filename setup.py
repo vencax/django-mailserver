@@ -16,8 +16,8 @@ setup(
         ('/etc/init.d/', ['django-mailserver']),
     ],
     packages=find_packages(),
-    install_requires=[
-        'git+git://github.com/vencax/django-projectgroup-settings-iterator.git'
+    dependency_links=[
+        'https://github.com/vencax/django-projectgroup-settings-iterator'
     ],
     include_package_data=True,
 )
