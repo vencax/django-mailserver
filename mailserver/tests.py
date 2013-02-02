@@ -75,6 +75,10 @@ class TestSetting(DjangoProjectRootTestCase):
         'expected:\n%s\nactual:\n%s' % (desiredForwarded, self.server.forward)
         assert self.server.runqueue == desiredCalled, \
         'expected:\n%s\nactual:\n%s' % (desiredCalled, self.server.runqueue)
+        
+    def tearDown(self):
+        self.server.close()
+        super(TestSetting, self).tearDown()
 
     def prepareConfigExtras(self, cfgfilestram):
         self.host = 'localhost'
