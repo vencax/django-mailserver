@@ -68,7 +68,7 @@ class TestSetting(DjangoProjectRootTestCase):
              'onAccountCallback',
              'accountcallback@example2.com',
              'vencax@noexists.com',
-             'From: %s To: accountcallback@%s  ahoj franto' % \
+             '\'From: %s To: accountcallback@%s  ahoj franto\'' % \
                 (addr_from, self.testDomains[1])]
         ]
         assert self.server.forward == desiredForwarded, \

@@ -50,7 +50,7 @@ class MailServer(MailserverSettings, smtpd.SMTPServer):
         Process message as django app in given path.
         """
         called = [python_binary, script, commandToRun,
-                  recipient, mailfrom, data.replace('\n', ' ')]
+                  recipient, mailfrom, '\'%s\'' % data.replace('\n', ' ')]
         logging.info(' '.join(called))
         self.call(called)
 
