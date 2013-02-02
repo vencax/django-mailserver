@@ -1,7 +1,6 @@
 import subprocess
 from setuptools import setup, find_packages
 from setuptools.command.install import install
-import os
 
 desc = '''Mailserver that allow whole environment of django\
  apps to interact with incoming mails.'''
@@ -9,11 +8,8 @@ installScript = '/etc/init.d/django-mailserver'
  
 class MyInstall(install):
     def run(self):
-        if os.path.exists(installScript):
-            subprocess.call([installScript, 'stop'])
         install.run(self)
         subprocess.call(['chmod', 'a+x', installScript])
-        subprocess.call([installScript, 'start'])
 
 setup(
     name='django-mailserver',
