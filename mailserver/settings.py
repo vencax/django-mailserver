@@ -26,9 +26,10 @@ class MailserverSettings(Settings):
 
     def process_project_settins(self, proj_sett, proj_path):
         for domainInfo in proj_sett['SETTINGS']:
-            domain, mapping, forwardaddr = domainInfo
+            if 'DOMAIN' not in domainInfo:
+                continue
             mappinginfo = []
-            for regex, command in mapping.items():
+            for regex, command in domainInfo.get('COMMANDMAPPING', {}).items():
                 mappinginfo.append((re.compile(regex), command))
 
             python_binary_path = self.path_to_python
@@ -37,7 +38,7 @@ class MailserverSettings(Settings):
                                                   self.path_to_python)
 
             script = os.path.join(proj_path, self.path_to_manage, 'manage.py')
-            self.settings[domain] = (
-                mappinginfo, forwardaddr,
+            self.settings[domainInfo['DOMAIN']] = (
+                mappinginfo, domainInfo.get('FORWARDMAPPING', {}),
                 python_binary_path, script
             )

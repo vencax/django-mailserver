@@ -30,15 +30,15 @@ class MailServer(MailserverSettings, smtpd.SMTPServer):
                 user, domain = recipient.split('@')
                 if domain in self.settings:
                     self._log_mail(domain, data)
-                    mapping, forwardaddr, python_binary, script = \
+                    mapping, forwardmapping, python_binary, script = \
                         self.settings[domain]
                     commandToRun = self._getCommandToRun(user, mapping)
                     if commandToRun:
                         self.runCommand(commandToRun, python_binary, script,
                                         recipient, mailfrom, data)
                         return '250 Ok'
-                    else:
-                        self.forwardmail(forwardaddr, mailfrom, rcpttos, data)
+                    elif user in forwardmapping:
+                        self.forwardmail(forwardmapping[user], mailfrom, rcpttos, data)
                         return '250 Ok'
             return '500 Error'  # for not owned mails
         except Exception, e:

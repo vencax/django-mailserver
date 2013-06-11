@@ -28,6 +28,18 @@ class TestSetting(DjangoProjectRootTestCase):
 
     testDomains = ('example1.com', 'example2.com', 'sample2.net')
     settings_module_name = 'mailserver_settings'
+    settings_template = '''
+SETTINGS = [{
+    'DOMAIN': '%s',
+    'COMMANDMAPPING': {
+        'accountcallback': 'onAccountCallback',
+        'whateverElse': 'onWhaeverElse'
+    },
+    'FORWARDMAPPING': {
+        'info': 'domainwide_forward@address.com'
+    }
+}]
+'''
 
     def test_all(self):
         self.server = TestingMailServer()
@@ -36,7 +48,7 @@ class TestSetting(DjangoProjectRootTestCase):
             zip(sorted(self.testDomains), sorted(self.server.settings)):
             self.assertTrue(actual == desired)
             self.assertTrue(self.server.settings[desired][1] == \
-                            'domainwide_forward@address.com')
+                            {'info': 'domainwide_forward@address.com'})
 
         self._runServer()
 
@@ -48,9 +60,17 @@ class TestSetting(DjangoProjectRootTestCase):
             raise AssertionError('SMTPDataError expected')
         except smtplib.SMTPDataError:
             pass
+        
+        try:
+            # not known account on existing domain
+            self._send_mail('ahoj franto', addr_from,
+                        ['vencax77@%s' % self.testDomains[0]])
+            raise AssertionError('SMTPDataError expected, unknown account')
+        except smtplib.SMTPDataError:
+            pass
 
         self._send_mail('ahoj franto', addr_from,
-                        ['vencax77@%s' % self.testDomains[0]])
+                        ['info@%s' % self.testDomains[0]])
         self._send_mail('ahoj franto', addr_from,
                         ['accountcallback@%s' % self.testDomains[1]])
         time.sleep(1)
@@ -58,8 +78,8 @@ class TestSetting(DjangoProjectRootTestCase):
         desiredForwarded = [
             ('domainwide_forward@address.com',
              'vencax@noexists.com',
-             ['vencax77@%s' % self.testDomains[0]],
-             'From: %s\nTo: vencax77@%s\n\nahoj franto' % \
+             ['info@%s' % self.testDomains[0]],
+             'From: %s\nTo: info@%s\n\nahoj franto' % \
                 (addr_from, self.testDomains[0]))
         ]
         desiredCalled = [
