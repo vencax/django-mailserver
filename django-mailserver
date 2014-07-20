@@ -16,9 +16,9 @@ import mailserver
 print os.path.dirname(mailserver.__file__)
 EOF`
 
-NAME=django-mailserver
+NAME=mail-forwarder
 PIDFILE=/var/run/$NAME.pid
-DESC="email server for django webapps service"
+DESC="email server for custom actions"
 
 start () {
     STATUS=0
@@ -26,14 +26,12 @@ start () {
     if test -e $PIDFILE ; then
       log_failure_msg "Already running (PID file exists)"
     else
-      python $ROOT_FOLDER/server.py &
-      echo $! > $PIDFILE
+      forever start --pidFile $PIDFILE -l /var/log/$NAME.log -a -m 1 --uid "$NAME" -c python $ROOT_FOLDER/server.py
     fi
     log_end_msg $STATUS
 }
 stop () {
-  kill `cat $PIDFILE` || true
-  rm -f $PIDFILE
+  forever stop "$NAME"
   log_end_msg 0
 }
 
